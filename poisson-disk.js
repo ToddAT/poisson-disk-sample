@@ -6,18 +6,20 @@ https://github.com/jeffrey-hearn/poisson-disk-sample
 MIT License
 */
 
-function PoissonDiskSampler( width, height, minDistance, sampleFrequency ){
+function PoissonDiskSampler( width, height, minDistance, sampleFrequency, seed ){
 	this.width = width;
 	this.height = height;
 	this.minDistance = minDistance;
 	this.sampleFrequency = sampleFrequency;
+	this.seed = seed || 1;
+	this.PRNG = new PM_PRNG(this.seed);
 	this.reset();
 }
 
 PoissonDiskSampler.prototype.reset = function(){
-	this.grid = new Grid( this.width, this.height, this.minDistance );
+	this.grid = new Grid( this.width, this.height, this.minDistance, this.PRNG );
 	this.outputList = new Array();
-	this.processingQueue = new RandomQueue();
+	this.processingQueue = new RandomQueue([], this.PRNG);
 }
 
 PoissonDiskSampler.prototype.sampleUntilSolution = function(){
@@ -64,10 +66,11 @@ PoissonDiskSampler.prototype.queueToAll = function ( point ){
 
 
 
-function Grid( width, height, minDistance ){
+function Grid( width, height, minDistance, randFunc ){
 	this.width = width;
 	this.height = height;
 	this.minDistance = minDistance;
+	this.PRNG = randFunc;
 	this.cellSize = this.minDistance / Math.SQRT2;
 	//console.log( this.cellSize );
 	this.pointSize = 2;
@@ -103,12 +106,12 @@ Grid.prototype.addPointToGrid = function( pointCoords, gridCoords ){
 }
 
 Grid.prototype.randomPoint = function(){
-	return { x: getRandomArbitrary(0,this.width), y: getRandomArbitrary(0,this.height) };
+	return { x: this.PRNG.nextDoubleRange(0,this.width), y: this.PRNG.nextDoubleRange(0,this.height) };
 }
 
 Grid.prototype.randomPointAround = function( point ){
-	var r1 = Math.random();
-	var r2 = Math.random();
+	var r1 = this.PRNG.nextDouble();
+	var r2 = this.PRNG.nextDouble();
 	// get a random radius between the min distance and 2 X mindist
 	var radius = this.minDistance * (r1 + 1);
 	// get random angle around the circle
@@ -165,8 +168,9 @@ Grid.prototype.calcDistance = function( pointInCell, point ){
 }
 
 
-function RandomQueue( a ){
+function RandomQueue( a, randFunc ){
 	this.queue = a || new Array();
+	this.PRNG = randFunc;
 }
 
 RandomQueue.prototype.push = function( element ){
@@ -175,7 +179,7 @@ RandomQueue.prototype.push = function( element ){
 
 RandomQueue.prototype.pop = function(){
 
-	randomIndex = getRandomInt( 0, this.queue.length );
+	randomIndex = this.PRNG.nextIntRange( 0, this.queue.length );
 	while( this.queue[randomIndex] === undefined ){
 
 		// Check if the queue is empty
@@ -187,7 +191,7 @@ RandomQueue.prototype.pop = function(){
 		if ( empty )
 			return null;
 
-		randomIndex = getRandomInt( 0, this.queue.length );
+		randomIndex = this.PRNG.nextIntRange( 0, this.queue.length );
 	}
 
 	element = this.queue[ randomIndex ];
@@ -201,13 +205,3 @@ Array.prototype.remove = function(from, to) {
 	this.length = from < 0 ? this.length + from : from;
 	return this.push.apply(this, rest);
 };
-
-// MDN Random Number Functions
-// https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Math/random
-function getRandomArbitrary(min, max) {
-	return Math.random() * (max - min) + min;
-}
-
-function getRandomInt(min, max) {
-	return Math.floor(Math.random() * (max - min + 1)) + min;
-}

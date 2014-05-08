@@ -12,7 +12,7 @@ $(document).ready(function() {
 
 
 
-	var sampler = new PoissonDiskSampler( CANVAS_WIDTH, CANVAS_HEIGHT, 30, 30 );
+	var sampler = new PoissonDiskSampler( CANVAS_WIDTH, CANVAS_HEIGHT, 30, 30, 1 );
 	sampler.grid.drawGrid( canvas );
 
 	var solution = sampler.sampleUntilSolution();
